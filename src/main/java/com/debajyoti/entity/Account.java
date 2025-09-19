@@ -8,7 +8,7 @@ public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Long id;  // Changed to Long
+    private Long id;
 
     @Column(name = "acc_number")
     private int accNumber;
@@ -19,20 +19,22 @@ public class Account {
     @Column(name = "last_name")
     private String lastName;
 
-    @Column(name = "password")
-    private String password;
-
     @Column(name = "balance")
     private Long balance;
 
+    // Link account to user for ownership
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User owner;
+
     public Account() {}
 
-    public Account(int accNumber, String firstName, String lastName, Long balance,String password) {
+    public Account(int accNumber, String firstName, String lastName, Long balance, User owner) {
         this.accNumber = accNumber;
         this.firstName = firstName;
         this.lastName = lastName;
         this.balance = balance;
-        this.password = password;
+        this.owner = owner;
     }
 
     public Long getId() {  // Changed return type to Long
@@ -75,12 +77,12 @@ public class Account {
         this.balance = balance;
     }
 
-    public String getPassword() {
-        return password;
+    public User getOwner() {
+        return owner;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 
     @Override
