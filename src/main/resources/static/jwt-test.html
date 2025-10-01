@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT Banking System Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        input, button { margin: 5px; padding: 8px; }
+        button { background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .response { background-color: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .success { background-color: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JWT Banking System API Test</h1>
+        
+        <!-- Registration Section -->
+        <div class="section">
+            <h2>Register User</h2>
+            <input type="text" id="regUsername" placeholder="Username" />
+            <input type="email" id="regEmail" placeholder="Email" />
+            <input type="password" id="regPassword" placeholder="Password" />
+            <select id="regRole">
+                <option value="CUSTOMER">Customer</option>
+                <option value="MANAGER">Manager</option>
+                <option value="ADMIN">Admin</option>
+            </select>
+            <button onclick="register()">Register</button>
+            <div id="regResponse" class="response"></div>
+        </div>
+
+        <!-- Login Section -->
+        <div class="section">
+            <h2>Login</h2>
+            <input type="text" id="loginUsername" placeholder="Username" />
+            <input type="password" id="loginPassword" placeholder="Password" />
+            <button onclick="login()">Login</button>
+            <div id="loginResponse" class="response"></div>
+        </div>
+
+        <!-- Token Display -->
+        <div class="section">
+            <h2>Current JWT Token</h2>
+            <textarea id="tokenDisplay" rows="3" style="width: 100%;" readonly></textarea>
+            <button onclick="clearToken()">Clear Token</button>
+        </div>
+
+        <!-- Accounts Section -->
+        <div class="section">
+            <h2>Account Operations</h2>
+            <button onclick="getAccounts()">Get My Accounts</button>
+            <button onclick="createAccount()">Create Test Account</button>
+            <div id="accountsResponse" class="response"></div>
+        </div>
+
+        <!-- Create Account Form -->
+        <div class="section">
+            <h2>Create New Account</h2>
+            <input type="number" id="accNumber" placeholder="Account Number" />
+            <input type="text" id="firstName" placeholder="First Name" />
+            <input type="text" id="lastName" placeholder="Last Name" />
+            <input type="number" id="balance" placeholder="Initial Balance" />
+            <button onclick="createNewAccount()">Create Account</button>
+            <div id="createAccountResponse" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        let jwtToken = '';
+
+        function register() {
+            const data = {
+                username: document.getElementById('regUsername').value,
+                email: document.getElementById('regEmail').value,
+                password: document.getElementById('regPassword').value,
+                role: document.getElementById('regRole').value
+            };
+
+            fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                const responseDiv = document.getElementById('regResponse');
+                responseDiv.innerHTML = JSON.stringify(data, null, 2);
+                responseDiv.className = data.error ? 'response error' : 'response success';
+            })
+            .catch(error => {
+                document.getElementById('regResponse').innerHTML = 'Error: ' + error;
+                document.getElementById('regResponse').className = 'response error';
+            });
+        }
+
+        function login() {
+            const data = {
+                username: document.getElementById('loginUsername').value,
+                password: document.getElementById('loginPassword').value
+            };
+
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                const responseDiv = document.getElementById('loginResponse');
+                responseDiv.innerHTML = JSON.stringify(data, null, 2);
+                
+                if (data.token) {
+                    jwtToken = data.token;
+                    document.getElementById('tokenDisplay').value = jwtToken;
+                    responseDiv.className = 'response success';
+                } else {
+                    responseDiv.className = 'response error';
+                }
+            })
+            .catch(error => {
+                document.getElementById('loginResponse').innerHTML = 'Error: ' + error;
+                document.getElementById('loginResponse').className = 'response error';
+            });
+        }
+
+        function getAccounts() {
+            if (!jwtToken) {
+                alert('Please login first');
+                return;
+            }
+
+            fetch('/api/accounts', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const responseDiv = document.getElementById('accountsResponse');
+                responseDiv.innerHTML = JSON.stringify(data, null, 2);
+                responseDiv.className = 'response success';
+            })
+            .catch(error => {
+                document.getElementById('accountsResponse').innerHTML = 'Error: ' + error;
+                document.getElementById('accountsResponse').className = 'response error';
+            });
+        }
+
+        function createNewAccount() {
+            if (!jwtToken) {
+                alert('Please login first');
+                return;
+            }
+
+            const data = {
+                accNumber: parseInt(document.getElementById('accNumber').value),
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                balance: parseInt(document.getElementById('balance').value)
+            };
+
+            fetch('/api/accounts', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                const responseDiv = document.getElementById('createAccountResponse');
+                responseDiv.innerHTML = JSON.stringify(data, null, 2);
+                responseDiv.className = data.error ? 'response error' : 'response success';
+            })
+            .catch(error => {
+                document.getElementById('createAccountResponse').innerHTML = 'Error: ' + error;
+                document.getElementById('createAccountResponse').className = 'response error';
+            });
+        }
+
+        function createAccount() {
+            if (!jwtToken) {
+                alert('Please login first');
+                return;
+            }
+
+            const testData = {
+                accNumber: Math.floor(Math.random() * 1000000),
+                firstName: 'Test',
+                lastName: 'User',
+                balance: 1000
+            };
+
+            fetch('/api/accounts', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(testData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                const responseDiv = document.getElementById('accountsResponse');
+                responseDiv.innerHTML = 'Created: ' + JSON.stringify(data, null, 2);
+                responseDiv.className = data.error ? 'response error' : 'response success';
+            })
+            .catch(error => {
+                document.getElementById('accountsResponse').innerHTML = 'Error: ' + error;
+                document.getElementById('accountsResponse').className = 'response error';
+            });
+        }
+
+        function clearToken() {
+            jwtToken = '';
+            document.getElementById('tokenDisplay').value = '';
+        }
+    </script>
+</body>
+</html>
